@@ -74,7 +74,7 @@ function lineChartViz(option) {
   const paletteLine = option.paletteLines || "a";
   const shapeLine = option.shapeLine || "angle";
   const positionLegend = option.positionLegend || "top";
-  const colorAxis = option.colorAxis || "#A4517B";
+  const colorAxis = option.colorAxis || "#000000";
   const labelXAxis = option.labelXAxis || "X Axis";
   const labelYAxis = option.labelYAxis || "Y Axis";
   const height = option.height;
@@ -151,8 +151,9 @@ function lineChartViz(option) {
     .domain([0, maxValue]) // input
     .range([svg_height - margin.top - margin.bottom, 0]); // output
 
-  const colorDomain = Array.from(new Set(data.map(d => d[columnLines])));
+  const colorDomain = Array.from(new Set(data.map(d => d.key)));
 
+  console.log(colorDomain);
   const colorScale = d3
     .scaleOrdinal()
     .domain(colorDomain)
@@ -161,12 +162,21 @@ function lineChartViz(option) {
   // Render chart
   const container = d3.select(el).classed("line-chart-viz", true);
 
+  let legendContainer;
+  if (positionLegend === "top") {
+    legendContainer = container.insert("div", ".chart-container");
+  }
+
   var chartContainer = container
     .append("svg")
     .attr("width", svg_width)
     .attr("height", svg_height)
     .append("g")
     .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+  if (positionLegend === "bottom") {
+    legendContainer = container.append("div");
+  }
 
   render(chartContainer, data);
 
@@ -248,12 +258,12 @@ function lineChartViz(option) {
     d3.selectAll(".x-axis text").style("fill", colorAxis);
 
     data.forEach(function(v) {
-      //console.log(v.values);
+      console.log(v);
       container
         .append("path")
         .datum(v.datum)
         .attr("class", "line")
-        .attr("stroke", colorScale)
+        .attr("stroke", colorScale(v.key))
         .each(function(d) {
           d.path0 = startLine(d);
           d.path1 = line(d);
@@ -261,6 +271,24 @@ function lineChartViz(option) {
         .attr("d", function(d) {
           return d.path0;
         });
+
+      v.datum.forEach(function(w, i) {
+        container
+          .append("circle")
+          .datum(w)
+          .attr("class", "tooltip-circle")
+          .attr("fill", "white")
+          .attr("stroke", colorScale(v.key))
+          .attr("cx", function(d) {
+            d.i = i;
+            return xScale(i);
+          })
+          .attr("cy", function() {
+            return yScale(0);
+          })
+          .attr("r", 4)
+          .attr("opacity", 0);
+      });
 
       container
         .append("text")
@@ -273,6 +301,16 @@ function lineChartViz(option) {
         })
         .attr("opacity", 0);
     });
+
+    tipBox = container
+      .append("rect")
+      .attr("y", 0)
+      .attr("x", 0)
+      .attr("width", svg_width - margin.left - margin.right)
+      .attr("height", svg_height - margin.top - margin.bottom)
+      .attr("opacity", 0)
+      .on("mousemove", showTooltip)
+      .on("mouseout", hideTooltip);
   }
 
   init();
@@ -301,6 +339,17 @@ function lineChartViz(option) {
         var current = d.path1;
         return d3.interpolatePath(previous, current);
       });
+
+    chartContainer
+      .selectAll(".tooltip-circle")
+      .transition()
+      .duration(1000)
+      .delay(500)
+      .attr("cy", function(d) {
+        console.log(d);
+        return yScale(d);
+      });
+
     chartContainer
       .selectAll(".value-label")
       .transition()
@@ -317,11 +366,90 @@ function lineChartViz(option) {
   tooltip.append("div").attr("class", "tooltip-label");
   tooltip.append("div").attr("class", "tooltip-value");
 
-  function showTooltip(d) {}
+  function showTooltip() {
+    const timeVal = Math.floor(
+      xScale.invert(+d3.mouse(tipBox.node())[0]) + 0.5
+    );
+    console.log(timeVal);
 
-  function hideTooltip(d) {}
+    d3.selectAll(".tooltip-circle").attr("opacity", function(d) {
+      var index = xScale.invert(
+        d3
+          .select(this)
+          .node()
+          .getAttribute("cx")
+      );
+
+      if (index === timeVal) {
+        return 1;
+      } else {
+        return 0;
+      }
+    });
+
+    var tooltip_html = "<table class='tooltip-table'>";
+
+    data.forEach(function(v) {
+      tooltip_html +=
+        "<tr style='color:" +
+        colorScale(v.key) +
+        "'><td>" +
+        v.key +
+        "</td><td></td></tr>";
+      tooltip_html +=
+        "<tr style='color:" +
+        colorScale(v.key) +
+        "'><td>" +
+        columnTime +
+        ": </td><td>" +
+        v.values[timeVal].key +
+        "</td></tr>";
+      tooltip_html +=
+        "<tr style='color:" +
+        colorScale(v.key) +
+        "'><td>" +
+        columnMeasure +
+        ": </td><td>" +
+        formatNumber(v.values[timeVal].value) +
+        "</td></tr>";
+    });
+
+    tooltip_html += "</table>";
+
+    tooltip
+      .html(tooltip_html)
+      .style("display", "block")
+      .style("top", d3.event.clientY - 20 + "px")
+      .style("left", d3.event.clientX + 20 + "px");
+  }
+
+  function hideTooltip(d) {
+    tooltip.html("").style("display", "none");
+    d3.selectAll(".tooltip-circle").attr("opacity", 0);
+  }
 
   // Render legend (either top or bottom)
+
+  legendContainer
+    .attr("class", "legend-container")
+    .selectAll(".legend-item")
+    .data(colorScale.domain())
+    .join("div")
+    .attr("class", "legend-item")
+    .call(function(item) {
+      item
+        .append("div")
+        .attr("class", "legend-swatch")
+        .style("background", function(d) {
+          return colorScale(d);
+        });
+    })
+    .call(function(item) {
+      item
+        .append("div")
+        .attr("class", "legend-label")
+        .text(d => d);
+    });
 
   // Utilities
   function aggregate(v, op, col) {

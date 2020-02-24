@@ -10,4 +10,40 @@
 
 .axis-label {
   text-anchor: middle;
+  font-size: 1em;
+}
+
+.tooltip-table {
+  padding: 5px;
+  background-color: rgba(255, 255, 255, 0.8);
+  font-size: 0.8em;
+  border: 1px solid #d0d0d0;
+}
+
+.chart-tooltip {
+  position: absolute;
+}
+
+.line-chart-viz .legend-container {
+  display: flex;
+  flex-wrap: wrap;
+}
+
+.line-chart-viz .legend-item {
+  display: flex;
+  align-items: center;
+  margin: 0.25em 0;
+}
+
+.line-chart-viz .legend-item {
+  margin-right: 1em;
+}
+
+.line-chart-viz .legend-swatch {
+  width: 1em;
+  height: 1em;
+}
+
+.line-chart-viz .legend-label {
+  margin-left: 0.5em;
 }
