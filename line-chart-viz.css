@@ -1,0 +1,13 @@
+.line-chart-viz {
+  font-family: "Nunito", sans-serif;
+  font-size: 1em;
+}
+
+.line-chart-viz .line {
+  fill: none;
+  stroke-width: 1px;
+}
+
+.axis-label {
+  text-anchor: middle;
+}
