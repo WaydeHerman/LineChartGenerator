@@ -27,7 +27,7 @@
     />
      <link rel="stylesheet" href="line-chart-viz.css" />
     <script src="https://d3js.org/d3.v5.min.js"></script>
-    <script src="https://d3js.org/d3-array.v2.min.js"></script>
+    <script src="https://unpkg.com/d3-interpolate-path/build/d3-interpolate-path.min.js"></script>
     <script src="line-chart-viz.js"></script>
   </head>
 
@@ -45,11 +45,11 @@
         el: document.getElementsByClassName("chart")[1],
         data: data,
         columnTime: "Years",
-        columnLines: "State",
+        columnLines: "Age",
         columnMeasure: "Value",
         operationMeasure:  "avg",
         paletteLine: "a",
-        shapeLine: "angle",
+        shapeLine: "smooth",
         positionLegend: "top",
         height: 300
 

@@ -72,7 +72,7 @@ function lineChartViz(option) {
   const columnMeasure = option.columnMeasure;
   const operationMeasure = option.operationMeasure || "avg";
   const paletteLine = option.paletteLines || "a";
-  const shapeLine = option.shapeLines || "angle";
+  const shapeLine = option.shapeLine || "angle";
   const positionLegend = option.positionLegend || "top";
   const colorAxis = option.colorAxis || "#A4517B";
   const labelXAxis = option.labelXAxis || "X Axis";
@@ -186,6 +186,19 @@ function lineChartViz(option) {
         return yScale(0);
       });
 
+    var line = d3
+      .line()
+      .x(function(d, i) {
+        return xScale(i);
+      })
+      .y(function(d) {
+        return yScale(d);
+      });
+
+    if (shapeLine === "smooth") {
+      line.curve(d3.curveBasis);
+    }
+
     container
       .append("g")
       .attr("class", "y-axis")
@@ -241,7 +254,24 @@ function lineChartViz(option) {
         .datum(v.datum)
         .attr("class", "line")
         .attr("stroke", colorScale)
-        .attr("d", startLine);
+        .each(function(d) {
+          d.path0 = startLine(d);
+          d.path1 = line(d);
+        })
+        .attr("d", function(d) {
+          return d.path0;
+        });
+
+      container
+        .append("text")
+        .datum(v.datum)
+        .attr("class", "value-label")
+        .attr("x", svg_width - margin.right - margin.left + 5)
+        .attr("y", yScale(0))
+        .text(function(d) {
+          return formatNumber(d[n - 1]);
+        })
+        .attr("opacity", 0);
     });
   }
 
@@ -257,7 +287,7 @@ function lineChartViz(option) {
         return yScale(d);
       });
 
-    if (shapeLines === "smooth") {
+    if (shapeLine === "smooth") {
       line.curve(d3.curveBasis);
     }
     // animate lines drawn.
@@ -266,7 +296,20 @@ function lineChartViz(option) {
       .transition()
       .duration(1000)
       .delay(500)
-      .attr("d", line);
+      .attrTween("d", function(d) {
+        var previous = d.path0;
+        var current = d.path1;
+        return d3.interpolatePath(previous, current);
+      });
+    chartContainer
+      .selectAll(".value-label")
+      .transition()
+      .duration(1000)
+      .delay(500)
+      .attr("y", function(d) {
+        return yScale(d[n - 1]);
+      })
+      .attr("opacity", 1);
   }
 
   // Tooltip
