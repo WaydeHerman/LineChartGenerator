@@ -1,8 +1,8 @@
 function lineChartViz(option) {
   const operationMeasures = ["sum", "avg", "count"];
-  const paletteLines = ["a", "b", "c"];
+  const paletteLines = ["full", "single", "extended"];
   const shapeLines = ["angle", "smooth"];
-  const positionLegends = ["top", "bottom"];
+  const positionLegends = ["top", "bottom", "inline"];
 
   // Verify options
   if (!operationMeasures.includes(option.operationMeasure)) {
@@ -15,13 +15,11 @@ function lineChartViz(option) {
     throw Error("Lines' shape can only be angle or smooth.");
   }
   if (!positionLegends.includes(option.positionLegend)) {
-    throw Error("Legend can only be top or bottom.");
+    throw Error("Legend can only be top, bottom or inline.");
   }
 
-  // check color is in correct format.
-
   const colors = {
-    a: [
+    full: [
       "#a4517b",
       "#d75a3b",
       "#47a9b2",
@@ -41,7 +39,7 @@ function lineChartViz(option) {
       "#007693",
       "#ea9865"
     ],
-    b: [
+    single: [
       "#e5f4f7",
       "#b0dfe8",
       "#7bc9d8",
@@ -52,16 +50,36 @@ function lineChartViz(option) {
       "#046784",
       "#005472"
     ],
-    c: [
-      "#e5f4f7",
-      "#b0dfe8",
-      "#7bc9d8",
-      "#46b4c9",
-      "#119eb9",
-      "#0d8ca7",
-      "#097996",
-      "#046784",
-      "#005472"
+    extended: [
+      "#D11141",
+      "#00B159",
+      "#00AEDB",
+      "#F37735",
+      "#FFC425",
+
+      "#D93C63",
+      "#2EBF77",
+      "#2EBCE1",
+      "#F58F59",
+      "#FFCE4C",
+
+      "#AC0E36",
+      "#009149",
+      "#008FB4",
+      "#C7622C",
+      "#D1A11F",
+
+      "#860B2A",
+      "#007139",
+      "#006F8C",
+      "#9B4C22",
+      "#A37D18",
+
+      "#5F081E",
+      "#005129",
+      "#005064",
+      "#6F3719",
+      "#745A11"
     ]
   };
 
@@ -71,7 +89,7 @@ function lineChartViz(option) {
   const columnLines = option.columnLines;
   const columnMeasure = option.columnMeasure;
   const operationMeasure = option.operationMeasure || "avg";
-  const paletteLine = option.paletteLines || "a";
+  const paletteLine = option.paletteLine || "full";
   const shapeLine = option.shapeLine || "angle";
   const positionLegend = option.positionLegend || "top";
   const colorAxis = option.colorAxis || "#000000";
@@ -150,7 +168,7 @@ function lineChartViz(option) {
     .getBoundingClientRect().width;
 
   const svg_height = height;
-  var margin = { top: 50, right: 50, bottom: 50, left: 50 };
+  var margin = { top: 50, right: 75, bottom: 50, left: 50 };
 
   // Need to flesh this out more once parameters are explained.
 
@@ -167,6 +185,9 @@ function lineChartViz(option) {
 
   const colorDomain = Array.from(new Set(data.map(d => d.key)));
 
+  console.log(colors);
+  console.log(paletteLine);
+  console.log(colors[paletteLine]);
   const colorScale = d3
     .scaleOrdinal()
     .domain(colorDomain)
@@ -222,54 +243,6 @@ function lineChartViz(option) {
       line.curve(d3.curveBasis);
     }
 
-    container
-      .append("g")
-      .attr("class", "y-axis")
-      .call(d3.axisLeft(yScale));
-
-    container
-      .append("g")
-      .attr("class", "x-axis")
-      .call(
-        d3
-          .axisBottom(xScale)
-          .ticks(n - 1)
-          .tickFormat(getXTicks)
-      )
-      .attr(
-        "transform",
-        "translate(0," + (svg_height - margin.top - margin.bottom) + ")"
-      );
-
-    container
-      .append("text")
-      .attr(
-        "transform",
-        "translate(" +
-          (svg_width - margin.left - margin.right) / 2 +
-          " ," +
-          (svg_height - margin.top) +
-          ")"
-      )
-      .attr("class", "x-axis axis-label")
-      .text(columnTime);
-
-    container
-      .append("text")
-      .attr("transform", "rotate(-90)")
-      .attr("y", 0 - margin.left)
-      .attr("x", 0 - (svg_height - margin.bottom - margin.top) / 2)
-      .attr("dy", "1em")
-      .attr("class", "y-axis axis-label")
-      .text(columnMeasure);
-
-    d3.selectAll(".y-axis line").style("stroke", colorAxis);
-    d3.selectAll(".y-axis .domain").style("stroke", colorAxis);
-    d3.selectAll(".y-axis text").style("fill", colorAxis);
-    d3.selectAll(".x-axis line").style("stroke", colorAxis);
-    d3.selectAll(".x-axis .domain").style("stroke", colorAxis);
-    d3.selectAll(".x-axis text").style("fill", colorAxis);
-
     data.forEach(function(v) {
       container
         .append("path")
@@ -286,7 +259,9 @@ function lineChartViz(option) {
         })
         .attr("d", function(d) {
           return d.path0;
-        });
+        })
+        .on("mouseover", lineMouseOver)
+        .on("mouseout", lineMouseOut);
 
       v.datum.forEach(function(w, i) {
         container
@@ -332,6 +307,7 @@ function lineChartViz(option) {
         .attr("class", "value-label")
         .attr("x", svg_width - margin.right - margin.left + 5)
         .attr("y", yScale(0))
+        .attr("dy", "0.5em")
         .attr("fill", function() {
           return colorScale(v.key);
         })
@@ -339,7 +315,70 @@ function lineChartViz(option) {
           return formatNumber(d[n - 1]);
         })
         .attr("opacity", 0);
+
+      container
+        .append("text")
+        .datum(v.datum)
+        .attr("class", "inline-legend")
+        .attr("x", svg_width - margin.right - margin.left + 5)
+        .attr("y", yScale(0))
+        .attr("dy", "-0.6em")
+        .attr("fill", function() {
+          return colorScale(v.key);
+        })
+        .text(function(d) {
+          return v.key;
+        })
+        .attr("opacity", 0);
     });
+
+    container
+      .append("g")
+      .attr("class", "y-axis")
+      .call(d3.axisLeft(yScale));
+
+    container
+      .append("g")
+      .attr("class", "x-axis")
+      .call(
+        d3
+          .axisBottom(xScale)
+          .ticks(n - 1)
+          .tickFormat(getXTicks)
+      )
+      .attr(
+        "transform",
+        "translate(0," + (svg_height - margin.top - margin.bottom) + ")"
+      );
+
+    container
+      .append("text")
+      .attr(
+        "transform",
+        "translate(" +
+          (svg_width - margin.left - margin.right) / 2 +
+          " ," +
+          (svg_height - margin.top) +
+          ")"
+      )
+      .attr("class", "x-axis axis-label")
+      .text(labelXAxis);
+
+    container
+      .append("text")
+      .attr("transform", "rotate(-90)")
+      .attr("y", 0 - margin.left)
+      .attr("x", 0 - (svg_height - margin.bottom - margin.top) / 2)
+      .attr("dy", "1em")
+      .attr("class", "y-axis axis-label")
+      .text(labelYAxis);
+
+    d3.selectAll(".y-axis line").style("stroke", colorAxis);
+    d3.selectAll(".y-axis .domain").style("stroke", colorAxis);
+    d3.selectAll(".y-axis text").style("fill", colorAxis);
+    d3.selectAll(".x-axis line").style("stroke", colorAxis);
+    d3.selectAll(".x-axis .domain").style("stroke", colorAxis);
+    d3.selectAll(".x-axis text").style("fill", colorAxis);
   }
 
   init();
@@ -387,6 +426,16 @@ function lineChartViz(option) {
         return yScale(d[n - 1]);
       })
       .attr("opacity", 1);
+
+    chartContainer
+      .selectAll(".inline-legend")
+      .transition()
+      .duration(1000)
+      .delay(500)
+      .attr("y", function(d) {
+        return yScale(d[n - 1]);
+      })
+      .attr("opacity", 1);
   }
 
   // Tooltip
@@ -395,27 +444,6 @@ function lineChartViz(option) {
   tooltip.append("div").attr("class", "tooltip-value");
 
   function revealTooltip(d, v, i) {
-    //console.log(d, v, i);
-
-    /* d3.selectAll(".tooltip-circle").attr("opacity", function(d) {
-      var index = xScale.invert(
-        d3
-          .select(this)
-          .node()
-          .getAttribute("cx")
-      );
-      var id = d3
-        .select(this)
-        .node()
-        .getAttribute("id");
-
-      if (v.key.toLowerCase().replace(/ /g, "-") === id && i === index) {
-        return 0;
-      } else {
-        return 0;
-      }
-    }); */
-
     d3.selectAll(".line").attr("stroke", function(d) {
       if (v.key !== d.key) {
         return "#D1D1D1";
@@ -475,90 +503,56 @@ function lineChartViz(option) {
     });
   }
 
-  function showTooltip() {
-    console.log("test");
-    const timeVal = Math.floor(
-      xScale.invert(+d3.mouse(d3.select(this).node())[0]) + 0.5
-    );
-
-    d3.selectAll(".tooltip-circle").attr("opacity", function(d) {
-      var index = xScale.invert(
-        d3
-          .select(this)
-          .node()
-          .getAttribute("cx")
-      );
-
-      if (index === timeVal) {
-        return 1;
+  function lineMouseOver(v) {
+    d3.selectAll(".line").attr("stroke", function(d) {
+      if (v.key !== d.key) {
+        return "#D1D1D1";
       } else {
-        return 0;
+        return colorScale(d.key);
       }
     });
 
-    var tooltip_html = "<table class='tooltip-table'>";
-
-    data.forEach(function(v) {
-      tooltip_html +=
-        "<tr style='color:" +
-        colorScale(v.key) +
-        "'><td>" +
-        v.key +
-        "</td><td></td></tr>";
-      tooltip_html +=
-        "<tr style='color:" +
-        colorScale(v.key) +
-        "'><td>" +
-        columnTime +
-        ": </td><td>" +
-        v.values[timeVal].key +
-        "</td></tr>";
-      tooltip_html +=
-        "<tr style='color:" +
-        colorScale(v.key) +
-        "'><td>" +
-        columnMeasure +
-        ": </td><td>" +
-        formatNumber(v.values[timeVal].value) +
-        "</td></tr>";
+    d3.selectAll(".value-label").attr("fill", function(d) {
+      if (v.key !== d.key) {
+        return "#D1D1D1";
+      } else {
+        return colorScale(d.key);
+      }
     });
-
-    tooltip_html += "</table>";
-
-    tooltip
-      .html(tooltip_html)
-      .style("display", "block")
-      .style("top", d3.event.clientY - 20 + "px")
-      .style("left", d3.event.clientX + 20 + "px");
   }
 
-  function hideTooltip(d) {
-    tooltip.html("").style("display", "none");
-    d3.selectAll(".tooltip-circle").attr("opacity", 0);
+  function lineMouseOut() {
+    d3.selectAll(".line").attr("stroke", function(d) {
+      return colorScale(d.key);
+    });
+    d3.selectAll(".value-label").attr("fill", function(d) {
+      return colorScale(d.key);
+    });
   }
 
   // Render legend (either top or bottom)
-
-  legendContainer
-    .attr("class", "legend-container")
-    .selectAll(".legend-item")
-    .data(colorScale.domain())
-    .join("div")
-    .attr("class", "legend-item")
-    .call(function(item) {
-      item
-        .append("div")
-        .attr("class", "legend-swatch")
-        .style("background", function(d) {
-          return colorScale(d);
-        });
-    })
-    .call(function(item) {
-      item
-        .append("div")
-        .attr("class", "legend-label")
-        .text(d => d);
-    });
+  if (positionLegend === "top" || positionLegend === "bottom") {
+    legendContainer
+      .attr("class", "legend-container")
+      .selectAll(".legend-item")
+      .data(colorScale.domain())
+      .join("div")
+      .attr("class", "legend-item")
+      .call(function(item) {
+        item
+          .append("div")
+          .attr("class", "legend-swatch")
+          .style("background", function(d) {
+            return colorScale(d);
+          });
+      })
+      .call(function(item) {
+        item
+          .append("div")
+          .attr("class", "legend-label")
+          .text(d => d);
+      });
+  }
 
   // Utilities
   function aggregate(v, op, col) {

@@ -6,6 +6,7 @@
 .line-chart-viz .line {
   fill: none;
   stroke-width: 2px;
+  cursor: pointer;
 }
 
 .line-chart-viz .tick {
@@ -13,6 +14,10 @@
 }
 
 .line-chart-viz .value-label {
+  font-weight: bold;
+}
+
+.line-chart-viz .inline-legend {
   font-weight: bold;
 }
 
@@ -28,7 +33,7 @@
 .tooltip-table {
   padding: 5px;
   background-color: rgba(255, 255, 255, 0.8);
-  font-size: 0.8em;
+  font-size: 1em;
   border: 1px solid #d0d0d0;
 }
 
