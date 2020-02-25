@@ -5,12 +5,24 @@
 
 .line-chart-viz .line {
   fill: none;
-  stroke-width: 1px;
+  stroke-width: 2px;
+}
+
+.line-chart-viz .tick {
+  font-size: 1.4em;
+}
+
+.line-chart-viz .value-label {
+  font-weight: bold;
 }
 
 .axis-label {
   text-anchor: middle;
   font-size: 1em;
+}
+
+.line-chart-viz .tooltip-circle {
+  cursor: pointer;
 }
 
 .tooltip-table {

@@ -25,8 +25,8 @@ function lineChartViz(option) {
       "#a4517b",
       "#d75a3b",
       "#47a9b2",
-      "#fffad9",
-      "#FFDF11",
+      "#FFE647",
+      "#D3B90E",
       "#58f3af",
       "#FF82AB",
       "#007693",
@@ -275,6 +275,10 @@ function lineChartViz(option) {
         .append("path")
         .datum(v.datum)
         .attr("class", "line")
+        .each(function(d) {
+          d.key = v.key;
+        })
+        .attr("id", v.key.toLowerCase().replace(/ /g, "-"))
         .attr("stroke", colorScale(v.key))
         .each(function(d) {
           d.path0 = startLine(d);
@@ -289,6 +293,26 @@ function lineChartViz(option) {
           .append("circle")
           .datum(w)
           .attr("class", "tooltip-circle")
+          .attr("id", v.key.toLowerCase().replace(/ /g, "-"))
+          .attr("fill", "black")
+          .attr("cx", function(d) {
+            d.i = i;
+            return xScale(i);
+          })
+          .attr("cy", function() {
+            return yScale(0);
+          })
+          .attr("r", 10)
+          .attr("opacity", 0)
+          .on("mouseover", function(d) {
+            revealTooltip(d, v, i);
+          })
+          .on("mouseout", removeTooltip);
+
+        /* container
+          .append("circle")
+          .datum(w)
+          .attr("class", "tooltip-circle")
           .attr("fill", "white")
           .attr("stroke", colorScale(v.key))
           .attr("cx", function(d) {
@@ -299,7 +323,7 @@ function lineChartViz(option) {
             return yScale(0);
           })
           .attr("r", 4)
-          .attr("opacity", 0);
+          .attr("opacity", 0); */
       });
 
       container
@@ -308,21 +332,14 @@ function lineChartViz(option) {
         .attr("class", "value-label")
         .attr("x", svg_width - margin.right - margin.left + 5)
         .attr("y", yScale(0))
+        .attr("fill", function() {
+          return colorScale(v.key);
+        })
         .text(function(d) {
           return formatNumber(d[n - 1]);
         })
         .attr("opacity", 0);
     });
-
-    tipBox = container
-      .append("rect")
-      .attr("y", 0)
-      .attr("x", 0)
-      .attr("width", svg_width - margin.left - margin.right)
-      .attr("height", svg_height - margin.top - margin.bottom)
-      .attr("opacity", 0)
-      .on("mousemove", showTooltip)
-      .on("mouseout", hideTooltip);
   }
 
   init();
@@ -377,9 +394,91 @@ function lineChartViz(option) {
   tooltip.append("div").attr("class", "tooltip-label");
   tooltip.append("div").attr("class", "tooltip-value");
 
+  function revealTooltip(d, v, i) {
+    //console.log(d, v, i);
+
+    /* d3.selectAll(".tooltip-circle").attr("opacity", function(d) {
+      var index = xScale.invert(
+        d3
+          .select(this)
+          .node()
+          .getAttribute("cx")
+      );
+      var id = d3
+        .select(this)
+        .node()
+        .getAttribute("id");
+
+      if (v.key.toLowerCase().replace(/ /g, "-") === id && i === index) {
+        return 0;
+      } else {
+        return 0;
+      }
+    }); */
+
+    d3.selectAll(".line").attr("stroke", function(d) {
+      if (v.key !== d.key) {
+        return "#D1D1D1";
+      } else {
+        return colorScale(d.key);
+      }
+    });
+
+    d3.selectAll(".value-label").attr("fill", function(d) {
+      if (v.key !== d.key) {
+        return "#D1D1D1";
+      } else {
+        return colorScale(d.key);
+      }
+    });
+
+    var tooltip_html = "<table class='tooltip-table'>";
+    tooltip_html +=
+      "<tr style='color:" +
+      colorScale(v.key) +
+      "'><td>" +
+      v.key +
+      "</td><td></td></tr>";
+    tooltip_html +=
+      "<tr style='color:" +
+      colorScale(v.key) +
+      "'><td>" +
+      columnTime +
+      ": </td><td>" +
+      v.values[i].key +
+      "</td></tr>";
+    tooltip_html +=
+      "<tr style='color:" +
+      colorScale(v.key) +
+      "'><td>" +
+      columnMeasure +
+      ": </td><td>" +
+      formatNumber(v.values[i].value) +
+      "</td></tr>";
+
+    tooltip_html += "</table>";
+
+    tooltip
+      .html(tooltip_html)
+      .style("display", "block")
+      .style("top", d3.event.pageY - 20 + "px")
+      .style("left", d3.event.pageX + 20 + "px");
+  }
+
+  function removeTooltip() {
+    tooltip.html("").style("display", "none");
+    d3.selectAll(".line").attr("stroke", function(d) {
+      return colorScale(d.key);
+    });
+    d3.selectAll(".value-label").attr("fill", function(d) {
+      return colorScale(d.key);
+    });
+  }
+
   function showTooltip() {
+    console.log("test");
     const timeVal = Math.floor(
-      xScale.invert(+d3.mouse(tipBox.node())[0]) + 0.5
+      xScale.invert(+d3.mouse(d3.select(this).node())[0]) + 0.5
     );
 
     d3.selectAll(".tooltip-circle").attr("opacity", function(d) {
