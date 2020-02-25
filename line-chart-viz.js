@@ -26,18 +26,18 @@ function lineChartViz(option) {
       "#d75a3b",
       "#47a9b2",
       "#fffad9",
-      "#4cb8d5",
+      "#FFDF11",
       "#58f3af",
-      "#feb8cf",
+      "#FF82AB",
       "#007693",
       "#ea9865",
       "#a4517b",
       "#d75a3b",
       "#47a9b2",
-      "#fffad9",
+      "#D6D1B6",
       "#4cb8d5",
       "#58f3af",
-      "#feb8cf",
+      "#FF8CB2",
       "#007693",
       "#ea9865"
     ],
@@ -79,8 +79,6 @@ function lineChartViz(option) {
   const labelYAxis = option.labelYAxis || "Y Axis";
   const height = option.height;
 
-  console.log(option.data);
-
   // Process data
   option.data.forEach(d => {
     d[columnMeasure] = parseFloat(d[columnMeasure]);
@@ -104,14 +102,30 @@ function lineChartViz(option) {
 
   const maxValue = d3.max(allValues);
 
+  const timeFormat = readTimeFormat(option.data[0][columnTime]);
+
+  console.log(timeFormat);
+
   var timeValues = d3
     .nest()
     .key(function(d) {
       return d[columnTime];
     })
-    .entries(option.data)
-    .map(d => +d.key)
-    .sort();
+    .entries(option.data);
+
+  if (timeFormat === "YYYYQN" || timeFormat === "YYYYWNN") {
+    timeValues = timeValues
+      .map(d => d.key)
+      .sort(function(a, b) {
+        a = +a.slice(0, 4) * 100 + +a.slice(5);
+        b = +b.slice(0, 4) * 100 + +b.slice(5);
+        return a - b;
+      });
+  } else {
+    timeValues = timeValues.map(d => +d.key).sort();
+  }
+
+  console.log(timeValues);
 
   function getXTicks(d, i) {
     return timeValues[i];
@@ -153,7 +167,6 @@ function lineChartViz(option) {
 
   const colorDomain = Array.from(new Set(data.map(d => d.key)));
 
-  console.log(colorDomain);
   const colorScale = d3
     .scaleOrdinal()
     .domain(colorDomain)
@@ -235,7 +248,7 @@ function lineChartViz(option) {
         "translate(" +
           (svg_width - margin.left - margin.right) / 2 +
           " ," +
-          (svg_height / 2 + margin.top + margin.bottom) +
+          (svg_height - margin.top) +
           ")"
       )
       .attr("class", "x-axis axis-label")
@@ -258,7 +271,6 @@ function lineChartViz(option) {
     d3.selectAll(".x-axis text").style("fill", colorAxis);
 
     data.forEach(function(v) {
-      console.log(v);
       container
         .append("path")
         .datum(v.datum)
@@ -346,7 +358,6 @@ function lineChartViz(option) {
       .duration(1000)
       .delay(500)
       .attr("cy", function(d) {
-        console.log(d);
         return yScale(d);
       });
 
@@ -370,7 +381,6 @@ function lineChartViz(option) {
     const timeVal = Math.floor(
       xScale.invert(+d3.mouse(tipBox.node())[0]) + 0.5
     );
-    console.log(timeVal);
 
     d3.selectAll(".tooltip-circle").attr("opacity", function(d) {
       var index = xScale.invert(
@@ -465,7 +475,26 @@ function lineChartViz(option) {
     }
   }
 
-  function readTime(d) {}
+  function readTimeFormat(d) {
+    if (d.length === 8) {
+      var timeFormat = "YYYYMMDD";
+      return timeFormat;
+    }
+    if (d.length === 4) {
+      var timeFormat = "YYYY";
+      return timeFormat;
+    }
+    if (d.includes("Q")) {
+      var timeFormat = "YYYYQN";
+    } else {
+      if (d.includes("W")) {
+        var timeFormat = "YYYYWNN";
+      } else {
+        var timeFormat = "YYYYMM";
+      }
+    }
+    return timeFormat;
+  }
 
   // Format number
   function formatNumber(d) {
