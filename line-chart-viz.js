@@ -122,8 +122,6 @@ function lineChartViz(option) {
 
   const timeFormat = readTimeFormat(option.data[0][columnTime]);
 
-  console.log(timeFormat);
-
   var timeValues = d3
     .nest()
     .key(function(d) {
@@ -142,8 +140,6 @@ function lineChartViz(option) {
   } else {
     timeValues = timeValues.map(d => +d.key).sort();
   }
-
-  console.log(timeValues);
 
   function getXTicks(d, i) {
     return timeValues[i];
@@ -185,9 +181,6 @@ function lineChartViz(option) {
 
   const colorDomain = Array.from(new Set(data.map(d => d.key)));
 
-  console.log(colors);
-  console.log(paletteLine);
-  console.log(colors[paletteLine]);
   const colorScale = d3
     .scaleOrdinal()
     .domain(colorDomain)
@@ -427,15 +420,17 @@ function lineChartViz(option) {
       })
       .attr("opacity", 1);
 
-    chartContainer
-      .selectAll(".inline-legend")
-      .transition()
-      .duration(1000)
-      .delay(500)
-      .attr("y", function(d) {
-        return yScale(d[n - 1]);
-      })
-      .attr("opacity", 1);
+    if (positionLegend === "inline") {
+      chartContainer
+        .selectAll(".inline-legend")
+        .transition()
+        .duration(1000)
+        .delay(500)
+        .attr("y", function(d) {
+          return yScale(d[n - 1]);
+        })
+        .attr("opacity", 1);
+    }
   }
 
   // Tooltip
@@ -459,6 +454,16 @@ function lineChartViz(option) {
         return colorScale(d.key);
       }
     });
+
+    if (positionLegend === "inline") {
+      d3.selectAll(".inline-legend").attr("fill", function(d) {
+        if (v.key !== d.key) {
+          return "#D1D1D1";
+        } else {
+          return colorScale(d.key);
+        }
+      });
+    }
 
     var tooltip_html = "<table class='tooltip-table'>";
     tooltip_html +=
@@ -501,6 +506,11 @@ function lineChartViz(option) {
     d3.selectAll(".value-label").attr("fill", function(d) {
       return colorScale(d.key);
     });
+    if (positionLegend === "inline") {
+      d3.selectAll(".inline-legend").attr("fill", function(d) {
+        return colorScale(d.key);
+      });
+    }
   }
 
   function lineMouseOver(v) {
@@ -519,6 +529,16 @@ function lineChartViz(option) {
         return colorScale(d.key);
       }
     });
+
+    if (positionLegend === "inline") {
+      d3.selectAll(".inline-legend").attr("fill", function(d) {
+        if (v.key !== d.key) {
+          return "#D1D1D1";
+        } else {
+          return colorScale(d.key);
+        }
+      });
+    }
   }
 
   function lineMouseOut() {
@@ -528,6 +548,12 @@ function lineChartViz(option) {
     d3.selectAll(".value-label").attr("fill", function(d) {
       return colorScale(d.key);
     });
+
+    if (positionLegend === "inline") {
+      d3.selectAll(".inline-legend").attr("fill", function(d) {
+        return colorScale(d.key);
+      });
+    }
   }
 
   // Render legend (either top or bottom)
