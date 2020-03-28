@@ -3,7 +3,8 @@
   font-size: 1em;
 }
 
-.line-chart-viz .line {
+.line-chart-viz .line-right,
+.line-chart-viz .line-left {
   fill: none;
   stroke-width: 2px;
   cursor: pointer;

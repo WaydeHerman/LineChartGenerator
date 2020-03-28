@@ -41,17 +41,34 @@
     <script>
     d3.json("sample.json").then(function(data) {
 
+      data.forEach(function(v) {
+        v['Value_1'] = Math.random()*10
+        v["Value_2"] = Math.random()*100
+        if (v["Years"] === "2014") {
+          v["Years"] = "January"
+        }
+        if (v["Years"] === "2015") {
+          v["Years"] = "February"
+        }
+        if (v["Years"] === "2016") {
+          v["Years"] = "March"
+        }
+      })
+
         lineChartViz({
         el: document.getElementsByClassName("chart")[1],
         data: data,
         columnTime: "Years",
         columnLines: "Age",
-        columnMeasure: "Value",
-        operationMeasure:  "avg",
+        measuresLeft: [{measure: "Value", operation: "avg"}, {measure: "Value_1", operation: "count"}],
+        measuresRight: {measure: "Value_2", operation: "sum"},
         paletteLine: "extended",
         shapeLine: "angle",
         positionLegend: "inline",
-        height: 900
+        labelXAxis: "test X",
+        labelYLeftAxis: "test Y",
+        labelYRightAxis: "test Y axis 2",
+        height: 500
       });
     })
 
